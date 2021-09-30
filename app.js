@@ -1556,9 +1556,6 @@ function bootTesting(info, team, depth) {
     return 0;
   } else if (noMoves(team, info) == true) {
     // check meat test //
-
-    console.log(depth);
-
     if (team == bootTeam) {
       if (depth == bootDepth) {
         return { from: [], to: [], targetType: "died", upgrade: "none" };
