@@ -1,7 +1,3 @@
-// change //
-// another change //
-console.log("........");
-
 function isBelong(ele, list) {
   list.forEach((obj) => {
     if (ele != obj) {
@@ -1245,6 +1241,7 @@ function biasMove(bias, scoopI, scoopJ) {
       castlingInfo[team]["rightCastle"] = "moved";
     }
   }
+  //  //
 
   let upgradeWindow = "close";
   // the soldier upgrade //
