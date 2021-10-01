@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Game</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section class="chess">
+      <div class="setting">
+        <h2>Style</h2>
+
+        <div class="backgroundBox">
+          <h3>Background</h3>
+
+          <div class="colors">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+        <div class="boardBox">
+          <h3>Board</h3>
+
+          <div class="colors">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+        <div class="graveBox">
+          <h3>Grave</h3>
+
+          <div class="colors">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+        <div class="turnTime">
+          <h3>Turn Time</h3>
+          <div class="timeBox">
+            <input class="min" type="number" value="1" />
+            <input class="sec" type="number" value="30" />
+          </div>
+        </div>
+
+        <button class="open">
+          <div></div>
+          <div></div>
+        </button>
+      </div>
+
+      <div class="setting boot">
+        <h2>Game</h2>
+
+        <div class="bootActive">
+          <h3>Boot Team</h3>
+
+          <div class="off b">OFF</div>
+          <div class="white b"></div>
+          <div class="black b"></div>
+
+          <div class="hard-level">
+            <h3>hard level</h3>
+
+            <div>
+              <div class="b"></div>
+              <p>1</p>
+            </div>
+            <div>
+              <div class="b"></div>
+              <p>2</p>
+            </div>
+            <div>
+              <div class="b"></div>
+              <p>3</p>
+            </div>
+            <div>
+              <div class="b"></div>
+              <p>4</p>
+            </div>
+            <div>
+              <div class="b"></div>
+              <p>5</p>
+            </div>
+            <div>
+              <div class="b"></div>
+              <p>6</p>
+            </div>
+            <div>
+              <div class="b"></div>
+              <p>7</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="format">
+          <h3>Formation of biases</h3>
+
+          <textarea class="code" name=""></textarea>
+
+          <button class="active">Active</button>
+          <button class="default">Default</button>
+        </div>
+
+        <button class="open">
+          <div></div>
+          <div></div>
+        </button>
+      </div>
+
+      <div class="white-grave"></div>
+      <div class="black-grave"></div>
+
+      <div class="container">
+        <div class="par">
+          <span>A</span>
+          <span>B</span>
+          <span>C</span>
+          <span>D</span>
+          <span>E</span>
+          <span>F</span>
+          <span>G</span>
+          <span>H</span>
+        </div>
+        <div class="par">
+          <span>A</span>
+          <span>B</span>
+          <span>C</span>
+          <span>D</span>
+          <span>E</span>
+          <span>F</span>
+          <span>G</span>
+          <span>H</span>
+        </div>
+
+        <div class="par">
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+          <span>5</span>
+          <span>6</span>
+          <span>7</span>
+          <span>8</span>
+        </div>
+        <div class="par">
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+          <span>5</span>
+          <span>6</span>
+          <span>7</span>
+          <span>8</span>
+        </div>
+
+        <div class="corner corner-1"></div>
+        <div class="corner corner-2"></div>
+        <div class="corner corner-3"></div>
+        <div class="corner corner-4"></div>
+
+        <div class="white-time">01:30</div>
+        <div class="black-time">01:30</div>
+
+        <div class="check-alarm check">
+          <p>Check</p>
+        </div>
+        <div class="check-alarm check-mate">
+          <p>Check Mate</p>
+        </div>
+
+        <div class="soldier-upgrade">
+          <h2>Chose One</h2>
+
+          <div><img src="" alt="" /></div>
+          <div><img src="" alt="" /></div>
+          <div><img src="" alt="" /></div>
+          <div><img src="" alt="" /></div>
+        </div>
+
+        <div class="board">
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+          <div class="imgBox">
+            <img src="img/scope1.png" alt="" /><img
+              src="img/scope2.png"
+              alt=""
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="app.js"></script>
+    <script src="style.js"></script>
+  </body>
+</html>
