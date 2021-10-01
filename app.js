@@ -1,5 +1,6 @@
 // change //
 // another change //
+console.log("test");
 
 function isBelong(ele, list) {
   list.forEach((obj) => {
