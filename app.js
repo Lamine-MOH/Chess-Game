@@ -1479,11 +1479,9 @@ function biasDied(scoopI, scoopJ) {
     bias.style.opacity = "0";
   }, 100);
   setTimeout(() => {
-    bias.style.display = "none";
+    board.removeChild(bias);
   }, 1500);
-  setTimeout(() => {
-    bias.style.gridArea = "none";
-  }, 2000);
+  //  //
 
   // take it to the grave //
   const grave = document.querySelector(".chess ." + team + "-grave");
