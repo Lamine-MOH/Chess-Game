@@ -1,3 +1,6 @@
+console.log("new version");
+
+//  //
 function isBelong(ele, list) {
   list.forEach((obj) => {
     if (ele != obj) {
@@ -148,47 +151,42 @@ function checkTest(team) {
   }
   //  //
 
-  const kingI = parseInt(animeKing.style.gridArea[1]);
-  const kingJ = numbers[`${animeKing.style.gridArea[0]}`];
-  //  //
-
   // testing if the anime king is available //
-  biases.forEach((obj) => {
-    const biasTeam = obj.src.split("img/")[1].split("%20")[0];
+  boardInfo.forEach((row, i) => {
+    row.forEach((column, j) => {
+      if (column["team"] == team) {
+        let moves = findMovesAvailable(
+          i + 1,
+          j + 1,
+          column["team"],
+          column["type"],
+          boardInfo
+        );
 
-    if (biasTeam == team && obj.style.display != "none") {
-      const biasType = obj.src.split("img/")[1].split("%20")[1].split(".")[0];
-      const i = parseInt(obj.style.gridArea[1]);
-      const j = numbers[`${obj.style.gridArea[0]}`];
+        moves.forEach((move) => {
+          if (move["target"] == "king") {
+            checkAvailable = true;
 
-      killsAvailable = findTransformsAvailable(
-        i,
-        j,
-        biasTeam,
-        biasType,
-        boardInfo
-      )[1];
+            // active the animation //
+            checkAlarmAnimation();
+            //  //
 
-      killsAvailable.forEach((kill) => {
-        if (kill[0] == kingI && kill[1] == kingJ) {
-          checkAvailable = true;
+            areas[i * 8 + j].style.animation = "hunt-place 1s infinite";
+            animeKing.classList.add("king-check");
 
-          // active the animation //
-          checkAlarmAnimation();
-          //  //
+            // prepare to remove the check //
+            lastHuntPlace = areas[i * 8 + j];
+            lastKing = animeKing;
+            //  //
 
-          areas[(i - 1) * 8 + j - 1].style.animation = "hunt-place 1s infinite";
-          animeKing.classList.add("king-check");
-
-          // prepare to remove the check //
-          lastHuntPlace = areas[(i - 1) * 8 + j - 1];
-          lastKing = animeKing;
-          //  //
-
-          return;
-        }
-      });
-    }
+            return;
+          }
+        });
+      }
+      if (checkAvailable == true) {
+        return;
+      }
+    });
   });
 }
 function removeCheck() {
@@ -217,34 +215,24 @@ function biasClickEvent(e) {
     situation = team + " select";
     biasSelected = e.target;
 
-    let data = findTransformsAvailable(i, j, team, type, boardInfo);
+    let moves = findMovesAvailable(i, j, team, type, boardInfo);
+    moves = findKingSafety(i, j, team, moves, boardInfo);
 
-    let moveAvailable = data[0];
-    let killAvailable = data[1];
-
-    let kingSafety = findKingSafety(
-      i,
-      j,
-      team,
-      moveAvailable,
-      killAvailable,
-      boardInfo
-    );
-
-    kingSafety.forEach((moves, moveType) => {
-      moves.forEach((move) => {
-        if (moveType == 0) {
-          moveScoop[(move[0] - 1) * 8 + move[1] - 1].style.transform =
-            "scale(1)";
-        } else if (moveType == 1) {
-          killScoop[(move[0] - 1) * 8 + move[1] - 1].style.transform =
-            "scale(1)";
-        }
-      });
+    moves.forEach((move) => {
+      if (move["target"] == "none") {
+        moveScoop[
+          (move["move"][0] - 1) * 8 + move["move"][1] - 1
+        ].style.transform = "scale(1)";
+      } else {
+        killScoop[
+          (move["move"][0] - 1) * 8 + move["move"][1] - 1
+        ].style.transform = "scale(1)";
+      }
     });
   }
 }
 //  //
+let biasesOnClick;
 function resetBiases(positionsCode) {
   // is code valuable //
   let test = true;
@@ -380,8 +368,19 @@ function resetBiases(positionsCode) {
     index += 5;
   }
 
-  // reload the biases obj //
+  situation = "white turn";
+  removeCheck();
+  //  //
+
   biases = document.querySelectorAll(".chess .container .board .bias");
+
+  // set the click event //
+  biases.forEach((obj) => {
+    obj.addEventListener("click", (e) => {
+      biasClickEvent(e);
+    });
+  });
+  //  //
 
   // simple filter //
   biases.forEach((obj) => {
@@ -391,15 +390,6 @@ function resetBiases(positionsCode) {
     }
   });
   //  //
-
-  situation = "white turn";
-  removeCheck();
-
-  biases.forEach((obj) => {
-    obj.addEventListener("click", (e) => {
-      biasClickEvent(e);
-    });
-  });
 }
 //  //
 resetBiases(defaultPositions);
@@ -442,51 +432,45 @@ const castlingInfo = {
 };
 // //
 //  //
-function findTransformsAvailable(i, j, team, type, boardInfo) {
-  let moveAvailable = [];
-  let killAvailable = [];
-
-  let moveIndex = 0;
-  let killIndex = 0;
+function findMovesAvailable(i, j, team, type, boardInfo) {
+  let movesAvailable = [];
 
   if (type == "soldier") {
     if (team == "white") {
-      // show the moving scoops (white soldier)//
       if (i > 1 && boardInfo[i - 1 - 1][j - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i - 1, j];
-        moveIndex++;
+        movesAvailable.push({ move: [i - 1, j], target: "none" });
 
         if (i == 7 && boardInfo[i - 2 - 1][j - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i - 2, j];
-          moveIndex++;
+          movesAvailable.push({ move: [i - 2, j], target: "none" });
         }
       }
 
-      // show the killing scoops (white soldier) //
       if (
         i > 1 &&
         j > 1 &&
         boardInfo[i - 1 - 1][j - 1 - 1]["team"] == "black"
       ) {
-        killAvailable[killIndex] = [i - 1, j - 1];
-        killIndex++;
+        movesAvailable.push({
+          move: [i - 1, j - 1],
+          target: boardInfo[i - 1 - 1][j - 1 - 1]["type"],
+        });
       }
       if (
         i > 1 &&
         j < 8 &&
         boardInfo[i - 1 - 1][j + 1 - 1]["team"] == "black"
       ) {
-        killAvailable[killIndex] = [i - 1, j + 1];
-        killIndex++;
+        movesAvailable.push({
+          move: [i - 1, j + 1],
+          target: boardInfo[i - 1 - 1][j + 1 - 1]["type"],
+        });
       }
     } else if (team == "black") {
-      // show the moving scoops (black soldier)//
       if (i < 8 && boardInfo[i + 1 - 1][j - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i + 1, j];
-        moveIndex++;
+        movesAvailable.push({ move: [i + 1, j], target: "none" });
+
         if (i == 2 && boardInfo[i + 2 - 1][j - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i + 2, j];
-          moveIndex++;
+          movesAvailable.push({ move: [i + 2, j], target: "none" });
         }
       }
 
@@ -496,179 +480,181 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
         j > 1 &&
         boardInfo[i + 1 - 1][j - 1 - 1]["team"] == "white"
       ) {
-        killAvailable[killIndex] = [i + 1, j - 1];
-        killIndex++;
+        movesAvailable.push({
+          move: [i + 1, j - 1],
+          target: boardInfo[i + 1 - 1][j - 1 - 1]["type"],
+        });
       }
       if (
         i < 8 &&
         j < 8 &&
         boardInfo[i + 1 - 1][j + 1 - 1]["team"] == "white"
       ) {
-        killAvailable[killIndex] = [i + 1, j + 1];
-        killIndex++;
+        movesAvailable.push({
+          move: [i + 1, j + 1],
+          target: boardInfo[i + 1 - 1][j + 1 - 1]["type"],
+        });
       }
     }
   } else if (type == "castle") {
     // forward //
     for (let castleI = i - 1; castleI > i - 8; castleI--) {
-      if (castleI < 1) {
+      if (castleI < 1 || boardInfo[castleI - 1][j - 1]["team"] == team) {
         break;
-      } else if (boardInfo[castleI - 1][j - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[castleI - 1][j - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [castleI, j];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [castleI, j];
-        killIndex++;
+        movesAvailable.push({
+          move: [castleI, j],
+          target: boardInfo[castleI - 1][j - 1]["type"],
+        });
 
-        break;
+        if (boardInfo[castleI - 1][j - 1]["type"] != "none") {
+          break;
+        }
       }
     }
 
     // backward //
     for (let castleI = i + 1; castleI < i + 8; castleI++) {
-      if (castleI > 8) {
+      if (castleI > 8 || boardInfo[castleI - 1][j - 1]["team"] == team) {
         break;
-      } else if (boardInfo[castleI - 1][j - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[castleI - 1][j - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [castleI, j];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [castleI, j];
-        killIndex++;
+        movesAvailable.push({
+          move: [castleI, j],
+          target: boardInfo[castleI - 1][j - 1]["type"],
+        });
 
-        break;
+        if (boardInfo[castleI - 1][j - 1]["type"] != "none") {
+          break;
+        }
       }
     }
 
     // left //
     for (let castleJ = j - 1; castleJ > j - 8; castleJ--) {
-      if (castleJ < 1) {
+      if (castleJ < 1 || boardInfo[i - 1][castleJ - 1]["team"] == team) {
         break;
-      } else if (boardInfo[i - 1][castleJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[i - 1][castleJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i, castleJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [i, castleJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [i, castleJ],
+          target: boardInfo[i - 1][castleJ - 1]["type"],
+        });
+
+        if (boardInfo[i - 1][castleJ - 1]["type"] != "none") {
+          break;
+        }
       }
     }
 
     // right //
     for (let castleJ = j + 1; castleJ < j + 8; castleJ++) {
-      if (castleJ > 8) {
+      if (castleJ > 8 || boardInfo[i - 1][castleJ - 1]["team"] == team) {
         break;
-      } else if (boardInfo[i - 1][castleJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[i - 1][castleJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i, castleJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [i, castleJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [i, castleJ],
+          target: boardInfo[i - 1][castleJ - 1]["type"],
+        });
+
+        if (boardInfo[i - 1][castleJ - 1]["type"] != "none") {
+          break;
+        }
       }
     }
   } else if (type == "knight") {
     // top left //
-    if (i - 2 >= 1 && j - 1 >= 1) {
-      if (boardInfo[i - 2 - 1][j - 1 - 1]["team"] == team);
-      else if (boardInfo[i - 2 - 1][j - 1 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i - 2, j - 1];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i - 2, j - 1];
-        killIndex++;
-      }
+    if (
+      i - 2 >= 1 &&
+      j - 1 >= 1 &&
+      boardInfo[i - 2 - 1][j - 1 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i - 2, j - 1],
+        target: boardInfo[i - 2 - 1][j - 1 - 1]["type"],
+      });
     }
 
     // top right //
-    if (i - 2 >= 1 && j + 1 <= 8) {
-      if (boardInfo[i - 2 - 1][j + 1 - 1]["team"] == team);
-      else if (boardInfo[i - 2 - 1][j + 1 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i - 2, j + 1];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i - 2, j + 1];
-        killIndex++;
-      }
+    if (
+      i - 2 >= 1 &&
+      j + 1 <= 8 &&
+      boardInfo[i - 2 - 1][j + 1 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i - 2, j + 1],
+        target: boardInfo[i - 2 - 1][j + 1 - 1]["type"],
+      });
     }
 
     // bottom left //
-    if (i + 2 <= 8 && j - 1 >= 1) {
-      if (boardInfo[i + 2 - 1][j - 1 - 1]["team"] == team);
-      else if (boardInfo[i + 2 - 1][j - 1 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i + 2, j - 1];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i + 2, j - 1];
-        killIndex++;
-      }
+    if (
+      i + 2 <= 8 &&
+      j - 1 >= 1 &&
+      boardInfo[i + 2 - 1][j - 1 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i + 2, j - 1],
+        target: boardInfo[i + 2 - 1][j - 1 - 1]["type"],
+      });
     }
 
     // bottom right //
-    if (i + 2 <= 8 && j + 1 <= 8) {
-      if (boardInfo[i + 2 - 1][j + 1 - 1]["team"] == team);
-      else if (boardInfo[i + 2 - 1][j + 1 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i + 2, j + 1];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i + 2, j + 1];
-        killIndex++;
-      }
+    if (
+      i + 2 <= 8 &&
+      j + 1 <= 8 &&
+      boardInfo[i + 2 - 1][j + 1 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i + 2, j + 1],
+        target: boardInfo[i + 2 - 1][j + 1 - 1]["type"],
+      });
     }
 
     // left top //
-    if (i - 1 >= 1 && j - 2 >= 1) {
-      if (boardInfo[i - 1 - 1][j - 2 - 1]["team"] == team);
-      else if (boardInfo[i - 1 - 1][j - 2 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i - 1, j - 2];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i - 1, j - 2];
-        killIndex++;
-      }
+    if (
+      i - 1 >= 1 &&
+      j - 2 >= 1 &&
+      boardInfo[i - 1 - 1][j - 2 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i - 1, j - 2],
+        target: boardInfo[i - 1 - 1][j - 2 - 1]["type"],
+      });
     }
 
     // left bottom //
-    if (i + 1 <= 8 && j - 2 >= 1) {
-      if (boardInfo[i + 1 - 1][j - 2 - 1]["team"] == team);
-      else if (boardInfo[i + 1 - 1][j - 2 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i + 1, j - 2];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i + 1, j - 2];
-        killIndex++;
-      }
+    if (
+      i + 1 <= 8 &&
+      j - 2 >= 1 &&
+      boardInfo[i + 1 - 1][j - 2 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i + 1, j - 2],
+        target: boardInfo[i + 1 - 1][j - 2 - 1]["type"],
+      });
     }
 
     // right top //
-    if (i - 1 >= 1 && j + 2 <= 8) {
-      if (boardInfo[i - 1 - 1][j + 2 - 1]["team"] == team);
-      else if (boardInfo[i - 1 - 1][j + 2 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i - 1, j + 2];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i - 1, j + 2];
-        killIndex++;
-      }
+    if (
+      i - 1 >= 1 &&
+      j + 2 <= 8 &&
+      boardInfo[i - 1 - 1][j + 2 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i - 1, j + 2],
+        target: boardInfo[i - 1 - 1][j + 2 - 1]["type"],
+      });
     }
 
     // right bottom //
-    if (i + 1 <= 8 && j + 2 <= 8) {
-      if (boardInfo[i + 1 - 1][j + 2 - 1]["team"] == team);
-      else if (boardInfo[i + 1 - 1][j + 2 - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i + 1, j + 2];
-        moveIndex++;
-      } else {
-        killAvailable[killIndex] = [i + 1, j + 2];
-        killIndex++;
-      }
+    if (
+      i + 1 <= 8 &&
+      j + 2 <= 8 &&
+      boardInfo[i + 1 - 1][j + 2 - 1]["team"] != team
+    ) {
+      movesAvailable.push({
+        move: [i + 1, j + 2],
+        target: boardInfo[i + 1 - 1][j + 2 - 1]["type"],
+      });
     }
   } else if (type == "rook") {
     let rookI;
@@ -681,17 +667,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       rookI--;
       rookJ--;
 
-      if (rookI < 1 || rookJ < 1) {
+      if (
+        rookI < 1 ||
+        rookJ < 1 ||
+        boardInfo[rookI - 1][rookJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [rookI, rookJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [rookI, rookJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [rookI, rookJ],
+          target: boardInfo[rookI - 1][rookJ - 1]["type"],
+        });
+
+        if (boardInfo[rookI - 1][rookJ - 1]["type"] != "none") {
+          break;
+        }
       }
     }
 
@@ -702,17 +692,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       rookI--;
       rookJ++;
 
-      if (rookI < 1 || rookJ > 8) {
+      if (
+        rookI < 1 ||
+        rookJ > 8 ||
+        boardInfo[rookI - 1][rookJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [rookI, rookJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [rookI, rookJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [rookI, rookJ],
+          target: boardInfo[rookI - 1][rookJ - 1]["type"],
+        });
+
+        if (boardInfo[rookI - 1][rookJ - 1]["type"] != "none") {
+          break;
+        }
       }
     }
 
@@ -723,17 +717,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       rookI++;
       rookJ--;
 
-      if (rookI > 8 || rookJ < 1) {
+      if (
+        rookI > 8 ||
+        rookJ < 1 ||
+        boardInfo[rookI - 1][rookJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [rookI, rookJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [rookI, rookJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [rookI, rookJ],
+          target: boardInfo[rookI - 1][rookJ - 1]["type"],
+        });
+
+        if (boardInfo[rookI - 1][rookJ - 1]["type"] != "none") {
+          break;
+        }
       }
     }
 
@@ -744,17 +742,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       rookI++;
       rookJ++;
 
-      if (rookI > 8 || rookJ > 8) {
+      if (
+        rookI > 8 ||
+        rookJ > 8 ||
+        boardInfo[rookI - 1][rookJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[rookI - 1][rookJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [rookI, rookJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [rookI, rookJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [rookI, rookJ],
+          target: boardInfo[rookI - 1][rookJ - 1]["type"],
+        });
+
+        if (boardInfo[rookI - 1][rookJ - 1]["type"] != "none") {
+          break;
+        }
       }
     }
   } else if (type == "queen") {
@@ -770,17 +772,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       queenI--;
       queenJ--;
 
-      if (queenI < 1 || queenJ < 1) {
+      if (
+        queenI < 1 ||
+        queenJ < 1 ||
+        boardInfo[queenI - 1][queenJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [queenI, queenJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [queenI, queenJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [queenI, queenJ],
+          target: boardInfo[queenI - 1][queenJ - 1]["type"],
+        });
+
+        if (boardInfo[queenI - 1][queenJ - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
@@ -791,17 +797,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       queenI--;
       queenJ++;
 
-      if (queenI < 1 || queenJ > 8) {
+      if (
+        queenI < 1 ||
+        queenJ > 8 ||
+        boardInfo[queenI - 1][queenJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [queenI, queenJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [queenI, queenJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [queenI, queenJ],
+          target: boardInfo[queenI - 1][queenJ - 1]["type"],
+        });
+
+        if (boardInfo[queenI - 1][queenJ - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
@@ -812,17 +822,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       queenI++;
       queenJ--;
 
-      if (queenI > 8 || queenJ < 1) {
+      if (
+        queenI > 8 ||
+        queenJ < 1 ||
+        boardInfo[queenI - 1][queenJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [queenI, queenJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [queenI, queenJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [queenI, queenJ],
+          target: boardInfo[queenI - 1][queenJ - 1]["type"],
+        });
+
+        if (boardInfo[queenI - 1][queenJ - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
@@ -833,17 +847,21 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
       queenI++;
       queenJ++;
 
-      if (queenI > 8 || queenJ > 8) {
+      if (
+        queenI > 8 ||
+        queenJ > 8 ||
+        boardInfo[queenI - 1][queenJ - 1]["team"] == team
+      ) {
         break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[queenI - 1][queenJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [queenI, queenJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [queenI, queenJ];
-        killIndex++;
-        break;
+        movesAvailable.push({
+          move: [queenI, queenJ],
+          target: boardInfo[queenI - 1][queenJ - 1]["type"],
+        });
+
+        if (boardInfo[queenI - 1][queenJ - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
@@ -851,174 +869,130 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
 
     // forward //
     for (queenI = i - 1; queenI > i - 8; queenI--) {
-      if (queenI < 1) {
+      if (queenI < 1 || boardInfo[queenI - 1][j - 1]["team"] == team) {
         break;
-      } else if (boardInfo[queenI - 1][j - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[queenI - 1][j - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [queenI, j];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [queenI, j];
-        killIndex++;
+        movesAvailable.push({
+          move: [queenI, j],
+          target: boardInfo[queenI - 1][j - 1]["type"],
+        });
 
-        break;
+        if (boardInfo[queenI - 1][j - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
     // backward //
     for (queenI = i + 1; queenI < i + 8; queenI++) {
-      if (queenI > 8) {
+      if (queenI > 8 || boardInfo[queenI - 1][j - 1]["team"] == team) {
         break;
-      } else if (boardInfo[queenI - 1][j - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[queenI - 1][j - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [queenI, j];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [queenI, j];
-        killIndex++;
+        movesAvailable.push({
+          move: [queenI, j],
+          target: boardInfo[queenI - 1][j - 1]["type"],
+        });
 
-        break;
+        if (boardInfo[queenI - 1][j - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
     // left //
     for (queenJ = j - 1; queenJ > j - 8; queenJ--) {
-      if (queenJ < 1) {
+      if (queenJ < 1 || boardInfo[i - 1][queenJ - 1]["team"] == team) {
         break;
-      } else if (boardInfo[i - 1][queenJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[i - 1][queenJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i, queenJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [i, queenJ];
-        killIndex++;
+        movesAvailable.push({
+          move: [i, queenJ],
+          target: boardInfo[i - 1][queenJ - 1]["type"],
+        });
 
-        break;
+        if (boardInfo[i - 1][queenJ - 1]["team"] != "none") {
+          break;
+        }
       }
     }
 
     // right //
     for (queenJ = j + 1; queenJ < j + 8; queenJ++) {
-      if (queenJ > 8) {
+      if (queenJ > 8 || boardInfo[i - 1][queenJ - 1]["team"] == team) {
         break;
-      } else if (boardInfo[i - 1][queenJ - 1]["team"] == team) {
-        break;
-      } else if (boardInfo[i - 1][queenJ - 1]["team"] == "none") {
-        moveAvailable[moveIndex] = [i, queenJ];
-        moveIndex++;
       } else {
-        killAvailable[killIndex] = [i, queenJ];
-        killIndex++;
+        movesAvailable.push({
+          move: [i, queenJ],
+          target: boardInfo[i - 1][queenJ - 1]["type"],
+        });
 
-        break;
+        if (boardInfo[i - 1][queenJ - 1]["team"] != "none") {
+          break;
+        }
       }
     }
   } else if (type == "king") {
     // forward //
-    if (i > 1) {
-      if (boardInfo[i - 1 - 1][j - 1]["team"] != team) {
-        if (boardInfo[i - 1 - 1][j - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i - 1, j];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i - 1, j];
-          killIndex++;
-        }
-      }
+    if (i > 1 && boardInfo[i - 1 - 1][j - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i - 1, j],
+        target: boardInfo[i - 1 - 1][j - 1]["type"],
+      });
     }
 
     // backward //
-    if (i < 8) {
-      if (boardInfo[i + 1 - 1][j - 1]["team"] != team) {
-        if (boardInfo[i + 1 - 1][j - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i + 1, j];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i + 1, j];
-          killIndex++;
-        }
-      }
+    if (i < 8 && boardInfo[i + 1 - 1][j - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i + 1, j],
+        target: boardInfo[i + 1 - 1][j - 1]["type"],
+      });
     }
 
     // left //
-    if (j > 1) {
-      if (boardInfo[i - 1][j - 1 - 1]["team"] != team) {
-        if (boardInfo[i - 1][j - 1 - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i, j - 1];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i, j - 1];
-          killIndex++;
-        }
-      }
+    if (j > 1 && boardInfo[i - 1][j - 1 - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i, j - 1],
+        target: boardInfo[i - 1][j - 1 - 1]["type"],
+      });
     }
 
     // right //
-    if (j < 8) {
-      if (boardInfo[i - 1][j + 1 - 1]["team"] != team) {
-        if (boardInfo[i - 1][j + 1 - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i, j + 1];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i, j + 1];
-          killIndex++;
-        }
-      }
+    if (j < 8 && boardInfo[i - 1][j + 1 - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i, j + 1],
+        target: boardInfo[i - 1][j + 1 - 1]["type"],
+      });
     }
 
     // top left //
-    if (i > 1 && j > 1) {
-      if (boardInfo[i - 1 - 1][j - 1 - 1]["team"] != team) {
-        if (boardInfo[i - 1 - 1][j - 1 - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i - 1, j - 1];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i - 1, j - 1];
-          killIndex++;
-        }
-      }
+    if (i > 1 && j > 1 && boardInfo[i - 1 - 1][j - 1 - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i - 1, j - 1],
+        target: boardInfo[i - 1 - 1][j - 1 - 1]["type"],
+      });
     }
 
     // top right //
-    if (i > 1 && j < 8) {
-      if (boardInfo[i - 1 - 1][j + 1 - 1]["team"] != team) {
-        if (boardInfo[i - 1 - 1][j + 1 - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i - 1, j + 1];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i - 1, j + 1];
-          killIndex++;
-        }
-      }
+    if (i > 1 && j < 8 && boardInfo[i - 1 - 1][j + 1 - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i - 1, j + 1],
+        target: boardInfo[i - 1 - 1][j + 1 - 1]["type"],
+      });
     }
 
     // bottom left //
-    if (i < 8 && j > 1) {
-      if (boardInfo[i + 1 - 1][j - 1 - 1]["team"] != team) {
-        if (boardInfo[i + 1 - 1][j - 1 - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i + 1, j - 1];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i + 1, j - 1];
-          killIndex++;
-        }
-      }
+    if (i < 8 && j > 1 && boardInfo[i + 1 - 1][j - 1 - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i + 1, j - 1],
+        target: boardInfo[i + 1 - 1][j - 1 - 1]["type"],
+      });
     }
 
     // bottom right //
-    if (i < 8 && j < 8) {
-      if (boardInfo[i + 1 - 1][j + 1 - 1]["team"] != team) {
-        if (boardInfo[i + 1 - 1][j + 1 - 1]["team"] == "none") {
-          moveAvailable[moveIndex] = [i + 1, j + 1];
-          moveIndex++;
-        } else {
-          killAvailable[killIndex] = [i + 1, j + 1];
-          killIndex++;
-        }
-      }
+    if (i < 8 && j < 8 && boardInfo[i + 1 - 1][j + 1 - 1]["team"] != team) {
+      movesAvailable.push({
+        move: [i + 1, j + 1],
+        target: boardInfo[i + 1 - 1][j + 1 - 1]["type"],
+      });
     }
 
     // castling //
@@ -1037,8 +1011,7 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
           boardInfo[i - 1][j - 2 - 1]["team"] == "none" &&
           boardInfo[i - 1][j - 3 - 1]["team"] == "none"
         ) {
-          moveAvailable[moveIndex] = [i, j - 2];
-          moveIndex++;
+          movesAvailable.push({ move: [i, j - 2], target: "none" });
         }
       }
 
@@ -1051,106 +1024,107 @@ function findTransformsAvailable(i, j, team, type, boardInfo) {
           boardInfo[i - 1][j + 1 - 1]["team"] == "none" &&
           boardInfo[i - 1][j + 2 - 1]["team"] == "none"
         ) {
-          moveAvailable[moveIndex] = [i, j + 2];
-          moveIndex++;
+          movesAvailable.push({ move: [i, j + 2], target: "none" });
         }
       }
     }
     //  //
   }
 
-  return [moveAvailable, killAvailable];
+  return movesAvailable;
 }
-function findKingSafety(i, j, team, moves, kills, boardInfo) {
+function findKingSafety(i, j, team, moves, boardInfo) {
+  let animeTeam = "";
+  if (team == "white") {
+    animeTeam = "black";
+  } else if (team == "black") {
+    animeTeam = "white";
+  }
+
   let safeMove = [];
-  let safeKill = [];
 
-  [moves, kills].forEach((data, moveType) => {
-    data.forEach((move) => {
-      let testingBoardInfo = [];
+  moves.forEach((move) => {
+    // make the move //
+    boardInfo[move["move"][0] - 1][move["move"][1] - 1]["team"] =
+      boardInfo[i - 1][j - 1]["team"];
+    boardInfo[move["move"][0] - 1][move["move"][1] - 1]["type"] =
+      boardInfo[i - 1][j - 1]["type"];
 
-      // copy the board info //
-      boardInfo.forEach((row, index) => {
-        testingBoardInfo.push([]);
-        row.forEach((column) => {
-          testingBoardInfo[index].push({
-            team: column["team"],
-            type: column["type"],
+    boardInfo[i - 1][j - 1]["team"] = "none";
+    boardInfo[i - 1][j - 1]["type"] = "none";
+    //  //
+
+    // test if the king is an target //
+    let safe = true;
+    boardInfo.forEach((row, I) => {
+      row.forEach((column, J) => {
+        if (column["team"] == animeTeam) {
+          let animeMoves = findMovesAvailable(
+            I + 1,
+            J + 1,
+            column["team"],
+            column["type"],
+            boardInfo
+          );
+
+          animeMoves.forEach((obj) => {
+            if (obj["target"] == "king") {
+              safe = false;
+              return;
+            }
           });
-        });
-      });
-      //  //
+        }
 
-      // set the simulation info //
-      testingBoardInfo[move[0] - 1][move[1] - 1]["team"] =
-        testingBoardInfo[i - 1][j - 1]["team"];
-      testingBoardInfo[move[0] - 1][move[1] - 1]["type"] =
-        testingBoardInfo[i - 1][j - 1]["type"];
-
-      testingBoardInfo[i - 1][j - 1]["team"] = "none";
-      testingBoardInfo[i - 1][j - 1]["type"] = "none";
-      //  //
-
-      // test if the king is an target //
-      let safe = true;
-      testingBoardInfo.forEach((row, I) => {
-        row.forEach((column, J) => {
-          if (column["team"] != team && column["team"] != "none") {
-            animeKills = findTransformsAvailable(
-              I + 1,
-              J + 1,
-              column["team"],
-              column["type"],
-              testingBoardInfo
-            )[1];
-
-            animeKills.forEach((obj) => {
-              if (testingBoardInfo[obj[0] - 1][obj[1] - 1]["type"] == "king") {
-                safe = false;
-                return;
-              }
-            });
-          }
-
-          if (safe == false) {
-            return;
-          }
-        });
         if (safe == false) {
           return;
         }
       });
-
-      if (safe == true) {
-        if (moveType == 0) {
-          safeMove.push(move);
-        } else if (moveType == 1) {
-          safeKill.push(move);
-        }
+      if (safe == false) {
+        return;
       }
-      //  //
     });
+    //  //
+
+    // unmake the move //
+    boardInfo[i - 1][j - 1]["team"] =
+      boardInfo[move["move"][0] - 1][move["move"][1] - 1]["team"];
+    boardInfo[i - 1][j - 1]["type"] =
+      boardInfo[move["move"][0] - 1][move["move"][1] - 1]["type"];
+
+    if (move["target"] == "none") {
+      boardInfo[move["move"][0] - 1][move["move"][1] - 1]["team"] = "none";
+      boardInfo[move["move"][0] - 1][move["move"][1] - 1]["type"] = "none";
+    } else {
+      boardInfo[move["move"][0] - 1][move["move"][1] - 1]["team"] = animeTeam;
+      boardInfo[move["move"][0] - 1][move["move"][1] - 1]["type"] =
+        move["target"];
+    }
+    //  //
+
+    if (safe == true) {
+      safeMove.push(move);
+    }
+    //  //
   });
 
-  return [safeMove, safeKill];
+  return safeMove;
 }
 function numberOfMoves(team, info) {
   let number = 0;
-  //
 
   info.forEach((row, i) => {
     row.forEach((column, j) => {
       if (column["team"] == team) {
-        let data = findTransformsAvailable(
+        let moves = findMovesAvailable(
           i + 1,
           j + 1,
           team,
           column["type"],
           info
         );
-        data = findKingSafety(i + 1, j + 1, team, data[0], data[1], info);
+        moves = findKingSafety(i + 1, j + 1, team, moves, info);
 
-        number += data[0].length + data[1].length;
+        number += moves.length;
       }
     });
   });
@@ -1159,21 +1133,20 @@ function numberOfMoves(team, info) {
 }
 function noMoves(team, info) {
   let test = true;
-  //
 
   info.forEach((row, i) => {
     row.forEach((column, j) => {
       if (column["team"] == team) {
-        let data = findTransformsAvailable(
+        let moves = findMovesAvailable(
           i + 1,
           j + 1,
           team,
           column["type"],
           info
         );
-        data = findKingSafety(i + 1, j + 1, team, data[0], data[1], info);
+        moves = findKingSafety(i + 1, j + 1, team, moves, info);
 
-        if (data[0].length + data[1].length > 0) {
+        if (moves.length > 0) {
           test = false;
           return;
         }
@@ -1195,12 +1168,25 @@ function biasMove(bias, scoopI, scoopJ) {
     scoopI--;
   }
   //  //
+
+  // get the bias info //
   const biasI = parseInt(bias.style.gridArea[1]);
   const biasJ = numbers[`${bias.style.gridArea[0]}`];
 
-  let width = areas[0].offsetWidth;
+  const team = bias.src.split("img/")[1].split("%20")[0];
+  const type = bias.src.split("img/")[1].split("%20")[1].split(".")[0];
   //  //
+
+  let animeTeam;
+  if (team == "white") {
+    animeTeam = "black";
+  } else if (team == "black") {
+    animeTeam = "white";
+  }
+  //  //
+
   // bias moving animation //
+  let width = areas[0].offsetWidth;
   setTimeout(() => {
     bias.style.transform = `translate(${
       (scoopJ - biasJ) * width + width * 0.8 * 0.1
@@ -1218,27 +1204,24 @@ function biasMove(bias, scoopI, scoopJ) {
   }, 1200);
   //  //
 
-  // update the board info //
-  const team = bias.src.split("img/")[1].split("%20")[0];
-  const type = bias.src.split("img/")[1].split("%20")[1].split(".")[0];
-
-  boardInfo[biasI - 1][biasJ - 1]["team"] = "none";
-  boardInfo[biasI - 1][biasJ - 1]["type"] = "none";
-  boardInfo[scoopI - 1][scoopJ - 1]["team"] = team;
-  boardInfo[scoopI - 1][scoopJ - 1]["type"] = type;
-
-  //  //
-
   // update the castling info //
   if (type == "king" && biasJ == 5) {
     castlingInfo[team]["king"] = "moved";
-  }
-  if (type == "castle") {
+  } else if (type == "castle") {
     if (biasJ == 1) {
       castlingInfo[team]["leftCastle"] = "moved";
     }
     if (biasJ == 8) {
       castlingInfo[team]["rightCastle"] = "moved";
+    }
+  }
+
+  if (boardInfo[scoopI - 1][scoopJ - 1]["type"] == "castle") {
+    if (scoopJ == 1) {
+      castlingInfo[animeTeam]["leftCastle"] = "moved";
+    }
+    if (scoopJ == 8) {
+      castlingInfo[animeTeam]["rightCastle"] = "moved";
     }
   }
   //  //
@@ -1338,13 +1321,12 @@ function biasMove(bias, scoopI, scoopJ) {
   }
   //  //
 
-  // check event //
-  let animeTeam;
-  if (team == "white") {
-    animeTeam = "black";
-  } else if (team == "black") {
-    animeTeam = "white";
-  }
+  // update the board info //
+  boardInfo[biasI - 1][biasJ - 1]["team"] = "none";
+  boardInfo[biasI - 1][biasJ - 1]["type"] = "none";
+  boardInfo[scoopI - 1][scoopJ - 1]["team"] = team;
+  boardInfo[scoopI - 1][scoopJ - 1]["type"] = type;
+  //  //
 
   removeCheck();
   setTimeout(() => {
@@ -1365,9 +1347,7 @@ function biasMove(bias, scoopI, scoopJ) {
     } else if (upgradeWindow == "close") {
       // active boot //
       if (bootTeam != "none" && team != bootTeam) {
-        if (soliderUpgradeWindow.style.transform != "scale(1)") {
-          bootTurn();
-        }
+        bootTurn();
       }
     }
   }, 2000);
@@ -1459,10 +1439,11 @@ function biasDied(scoopI, scoopJ) {
   let bias;
   let team;
 
-  biases.forEach((obj, index) => {
+  biases.forEach((obj) => {
     if (
       obj.style.gridArea[0] == gridArea[0] &&
-      obj.style.gridArea[1] == gridArea[1]
+      obj.style.gridArea[1] == gridArea[1] &&
+      obj.style.display != "none"
     ) {
       bias = obj;
       team = obj.src.split("img/")[1].split("%20")[0];
@@ -1479,7 +1460,7 @@ function biasDied(scoopI, scoopJ) {
     bias.style.opacity = "0";
   }, 100);
   setTimeout(() => {
-    board.removeChild(bias);
+    bias.style.display = "none";
   }, 1500);
   //  //
 
@@ -1492,6 +1473,7 @@ function biasDied(scoopI, scoopJ) {
 
   diedBox.appendChild(innerImg);
   grave.appendChild(diedBox);
+  //  //
 }
 
 // move on click moveScoop //
@@ -1536,243 +1518,219 @@ killScoop.forEach((obj, index) => {
 // boot turn //
 let Values = {
   none: 0,
-  soldier: 10,
-  rook: 40,
-  knight: 50,
-  castle: 40,
-  queen: 70,
-  checkMate: -1000,
+  soldier: 100,
+  rook: 400,
+  castle: 500,
+  knight: 400,
+  queen: 800,
+  king: 0,
 };
+let bootDepth = 1;
+
 let compar;
-
 //  //
-function bootTesting(info, team, depth) {
-  // cont the number of testes //
-  // compar++;
-  //  //
 
-  if (depth == 0) {
-    return 0;
-  } else if (noMoves(team, info) == true) {
-    // check meat test //
-    if (team == bootTeam) {
-      if (depth == bootDepth) {
-        return { from: [], to: [], targetType: "died", upgrade: "none" };
-      } else {
-        return Values["checkMate"];
+function positionEvaluation(oldFormat, newFormate) {
+  let oldValue = 0;
+  let newValue = 0;
+
+  oldFormat.forEach((row) => {
+    row.forEach((column) => {
+      if (column["team"] == bootTeam) {
+        oldValue += Values[column["type"]];
+      } else if (column["team"] != "none") {
+        oldValue -= Values[column["type"]];
       }
+    });
+  });
+
+  newFormate.forEach((row, i) => {
+    row.forEach((column, j) => {
+      if (column["team"] == bootTeam) {
+        newValue += Values[column["type"]];
+      } else if (column["team"] != "none") {
+        newValue -= Values[column["type"]];
+      }
+    });
+  });
+
+  return newValue - oldValue;
+}
+
+function bootTesting(info, team, alpha, beta, depth) {
+  // compar++;
+
+  //  //
+  if (depth == 0) {
+    return positionEvaluation(boardInfo, info);
+  } else if (noMoves(team, info) == true) {
+    if (team == bootTeam) {
+      return -10000;
     } else {
-      return -1 * Values["checkMate"];
+      return 10000;
     }
   }
   //  //
 
-  let movesValue = [];
-  let movesList = [];
+  let animeTeam;
+  if (team == "white") {
+    animeTeam = "black";
+  } else {
+    animeTeam = "white";
+  }
 
+  let bestMove;
   info.forEach((row, i) => {
     row.forEach((column, j) => {
       if (column["team"] == team) {
-        // get possible moves //
-        let data;
-        data = findTransformsAvailable(
+        // get legal moves //
+        let moves = findMovesAvailable(
           i + 1,
           j + 1,
           column["team"],
           column["type"],
           info
         );
-        data = findKingSafety(
-          i + 1,
-          j + 1,
-          column["team"],
-          data[0],
-          data[1],
-          info
-        );
+        moves = findKingSafety(i + 1, j + 1, column["team"], moves, info);
+        //  //
+
+        // sorting the moves //
+        for (let x = 0; x < moves.length - 1; x++) {
+          let bestIndex = x;
+          for (let y = x + 1; y < moves.length; y++) {
+            if (
+              Values[moves[y]["target"]] > Values[moves[bestIndex]["target"]]
+            ) {
+              bestIndex = y;
+            }
+          }
+          let move = moves[x];
+          moves[x] = moves[bestIndex];
+          moves[bestIndex] = move;
+        }
         //  //
 
         // test all moves //
-        data.forEach((moves) => {
-          moves.forEach((move) => {
-            // copy info //
-            let newInfo = [];
-            info.forEach((row, i) => {
-              newInfo.push([]);
-              row.forEach((column) => {
-                newInfo[i].push({ team: column["team"], type: column["type"] });
-              });
-            });
-            //  //
-
-            // the target
-            let targetType = newInfo[move[0] - 1][move[1] - 1]["type"];
-            //
-
-            // the king edg bonus //
-            let kingEdg = 0;
-            if (column["type"] == "king") {
-              if (
-                (i + 1 <= 4 && move[0] < i) ||
-                (i + 1 >= 5 && move[0] > i) ||
-                (j + 1 <= 4 && move[1] < j) ||
-                (j + 1 >= 5 && move[1] > j)
-              ) {
-                kingEdg += -1;
-              }
-            }
-            //  //
-
-            // make the move //
-            newInfo[move[0] - 1][move[1] - 1]["team"] = newInfo[i][j]["team"];
-            newInfo[move[0] - 1][move[1] - 1]["type"] = newInfo[i][j]["type"];
-            newInfo[i][j]["team"] = "none";
-            newInfo[i][j]["type"] = "none";
-            //  //
-            let animeTeam;
-            if (team == "white") {
-              animeTeam = "black";
-            } else if (team == "black") {
-              animeTeam = "white";
-            }
-            //  //
-
-            // make the move //
+        moves.forEach((move) => {
+          // the king edg bonus //
+          let kingEdg = 0;
+          if (column["type"] == "king") {
             if (
-              newInfo[move[0] - 1][move[1] - 1]["type"] == "soldier" &&
-              ((team == "white" && move[0] == 1) ||
-                (team == "black" && move[0] == 8))
+              (i + 1 <= 4 && move["move"][0] < i) ||
+              (i + 1 >= 5 && move["move"][0] > i)
             ) {
-              // soldier upgrade //
-              let upgradeList = ["queen", "knight"];
-
-              upgradeList.forEach((upgrade) => {
-                // test the soldier upgrades //
-
-                // reset //
-                newInfo[move[0] - 1][move[1] - 1]["team"] = info[i][j]["team"];
-                newInfo[move[0] - 1][move[1] - 1]["type"] = info[i][j]["type"];
-                newInfo[i][j]["team"] = "none";
-                newInfo[i][j]["type"] = "none";
-                // make the upgrade //
-                newInfo[move[0] - 1][move[1] - 1]["type"] = upgrade;
-                //  //
-
-                // next level //
-                if (team == bootTeam) {
-                  let nextValue = bootTesting(newInfo, animeTeam, depth - 1);
-
-                  movesValue.push(
-                    nextValue +
-                      Values[targetType] +
-                      (Values[upgrade] - Values["soldier"])
-                  );
-                } else {
-                  let nextValue = bootTesting(newInfo, animeTeam, depth - 1);
-
-                  movesValue.push(
-                    nextValue -
-                      Values[targetType] -
-                      (Values[upgrade] - Values["soldier"])
-                  );
-                }
-
-                movesList.push({
-                  from: [i + 1, j + 1],
-                  to: [move[0], move[1]],
-                  targetType: targetType,
-                  upgrade: upgrade,
-                });
-                //  //
-              });
-            } else {
-              // no soldier upgrade //
-
-              // next level //
-              if (team == bootTeam) {
-                movesValue.push(
-                  bootTesting(newInfo, animeTeam, depth - 1) +
-                    (Values[targetType] + kingEdg)
-                );
-              } else {
-                movesValue.push(
-                  bootTesting(newInfo, animeTeam, depth - 1) -
-                    (Values[targetType] + kingEdg)
-                );
-              }
-
-              movesList.push({
-                from: [i + 1, j + 1],
-                to: [move[0], move[1]],
-                targetType: targetType,
-                upgrade: "none",
-              });
-              //  //
+              kingEdg += -1;
             }
-          });
+            if (
+              (j + 1 <= 4 && move["move"][1] < j) ||
+              (j + 1 >= 5 && move["move"][1] > j)
+            ) {
+              kingEdg += -1;
+            }
+          }
+          //  //
+
+          let target = {
+            team: info[move["move"][0] - 1][move["move"][1] - 1]["team"],
+            type: info[move["move"][0] - 1][move["move"][1] - 1]["type"],
+          };
+
+          // make the move //
+          info[move["move"][0] - 1][move["move"][1] - 1]["team"] =
+            column["team"];
+          info[move["move"][0] - 1][move["move"][1] - 1]["type"] =
+            column["type"];
+          column["team"] = "none";
+          column["type"] = "none";
+          //  //
+
+          // get the evaluation //
+          let nextLevel =
+            bootTesting(info, animeTeam, alpha, beta, depth - 1) + kingEdg;
+
+          // unmake the move //
+          column["team"] =
+            info[move["move"][0] - 1][move["move"][1] - 1]["team"];
+          column["type"] =
+            info[move["move"][0] - 1][move["move"][1] - 1]["type"];
+
+          info[move["move"][0] - 1][move["move"][1] - 1]["team"] =
+            target["team"];
+          info[move["move"][0] - 1][move["move"][1] - 1]["type"] =
+            target["type"];
+          //  //
 
           //  //
+          if (team == bootTeam && nextLevel > alpha) {
+            alpha = nextLevel;
+            bestMove = {
+              from: [i + 1, j + 1],
+              to: [move["move"][0], move["move"][1]],
+              targetType: target["type"],
+              upgrade: "none",
+            };
+          }
+          if (team != bootTeam && nextLevel < beta) {
+            beta = nextLevel;
+            bestMove = {
+              from: [i + 1, j + 1],
+              to: [move["move"][0], move["move"][1]],
+              targetType: target["type"],
+              upgrade: "none",
+            };
+          }
+
+          if (alpha >= beta) {
+            return;
+          }
+          //  //
         });
+
+        //  //
       }
     });
   });
 
-  // best and worst move //
-  // get the best and the worst values //
-  let bestValue = movesValue[0];
-  let worstValue = movesValue[0];
-
-  movesValue.forEach((value) => {
-    if (value > bestValue) {
-      bestValue = value;
-    }
-    if (value < worstValue) {
-      worstValue = value;
-    }
-  });
-  //  //
-
-  // get the top and last value indexes //
-  let bestValueIndexes = [];
-  let worstValueIndexes = [];
-
-  movesValue.forEach((value, i) => {
-    if (value == bestValue) {
-      bestValueIndexes.push(i);
-    }
-    if (value == worstValue) {
-      worstValueIndexes.push(i);
-    }
-  });
-  //  //
-
-  // result //
-  if (team == bootTeam) {
-    let index = parseInt(Math.random() * bestValueIndexes.length);
-
-    if (depth == bootDepth) {
-      return movesList[bestValueIndexes[index]];
-    } else {
-      return movesValue[bestValueIndexes[index]];
-    }
+  if (depth == bootDepth) {
+    return bestMove;
   } else {
-    let index = parseInt(Math.random() * worstValueIndexes.length);
-
-    return movesValue[worstValueIndexes[index]];
+    if (team == bootTeam) {
+      return alpha;
+    } else {
+      return beta;
+    }
   }
-  //  //
 }
 
-let bootDepth = 1;
 function bootTurn() {
-  let bootMove = bootTesting(boardInfo, bootTeam, bootDepth);
+  // copy the board information //
+  let copyInfo = [];
+  boardInfo.forEach((row, i) => {
+    copyInfo.push([]);
+    row.forEach((column) => {
+      copyInfo[i].push({ team: column["team"], type: column["type"] });
+    });
+  });
+  //  //
+
+  // console.log("boot playing");
+  // compar = 0;
+
+  let bootMove = bootTesting(copyInfo, bootTeam, -100000, 100000, bootDepth);
+
+  // console.log("num of testes: " + compar);
+  // console.log("");
 
   let bootBias;
   biases.forEach((bias) => {
     const biasI = parseInt(bias.style.gridArea[1]);
     const biasJ = numbers[`${bias.style.gridArea[0]}`];
 
-    if (biasI == bootMove["from"][0] && biasJ == bootMove["from"][1]) {
+    if (
+      bias.style.display != "none" &&
+      biasI == bootMove["from"][0] &&
+      biasJ == bootMove["from"][1]
+    ) {
       bootBias = bias;
       return;
     }
@@ -1825,65 +1783,10 @@ difficultButtons.forEach((button, index) => {
     e.target.style.background = "#f20";
     //  //
 
-    // set the values //
-    if (index == 0) {
-      bootDepth = 1;
-
-      Values["soldier"] = 10;
-      Values["rook"] = 40;
-      Values["castle"] = 50;
-      Values["knight"] = 40;
-      Values["queen"] = 70;
-    } else if (index == 1) {
-      bootDepth = 2;
-
-      Values["soldier"] = 10;
-      Values["rook"] = 40;
-      Values["castle"] = 50;
-      Values["knight"] = 40;
-      Values["queen"] = 70;
-    } else if (index == 2) {
-      bootDepth = 2;
-
-      Values["soldier"] = 10;
-      Values["rook"] = 50;
-      Values["castle"] = 60;
-      Values["knight"] = 70;
-      Values["queen"] = 80;
-    } else if (index == 3) {
-      bootDepth = 2;
-
-      Values["soldier"] = 30;
-      Values["rook"] = 60;
-      Values["castle"] = 60;
-      Values["knight"] = 70;
-      Values["queen"] = 80;
-    } else if (index == 4) {
-      bootDepth = 4;
-
-      Values["soldier"] = 10;
-      Values["rook"] = 40;
-      Values["castle"] = 50;
-      Values["knight"] = 40;
-      Values["queen"] = 70;
-    } else if (index == 5) {
-      bootDepth = 4;
-
-      Values["soldier"] = 10;
-      Values["rook"] = 50;
-      Values["castle"] = 60;
-      Values["knight"] = 70;
-      Values["queen"] = 80;
-    } else if (index == 6) {
-      bootDepth = 4;
-
-      Values["soldier"] = 30;
-      Values["rook"] = 60;
-      Values["castle"] = 60;
-      Values["knight"] = 70;
-      Values["queen"] = 80;
-    }
+    bootDepth = index + 1;
     //  //
   });
 });
 //  //
+
+//
