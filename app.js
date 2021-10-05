@@ -392,7 +392,8 @@ function resetBiases(positionsCode) {
   //  //
 }
 //  //
-resetBiases(defaultPositions);
+// resetBiases(defaultPositions);
+resetBiases("bc15/bc25/bk35/wk75");
 
 // hide scoop on click area //
 areas.forEach((obj) => {
@@ -1534,12 +1535,23 @@ function positionEvaluation(oldFormat, newFormate) {
   let oldValue = 0;
   let newValue = 0;
 
-  oldFormat.forEach((row) => {
-    row.forEach((column) => {
+  let bootKingPosition = { old: [0, 0], new: [0, 0] };
+  let animeKingPosition = { old: [0, 0], new: [0, 0] };
+
+  oldFormat.forEach((row, i) => {
+    row.forEach((column, j) => {
       if (column["team"] == bootTeam) {
         oldValue += Values[column["type"]];
       } else if (column["team"] != "none") {
         oldValue -= Values[column["type"]];
+      }
+
+      if (column["type"] == "king") {
+        if (column["team"] == bootTeam) {
+          bootKingPosition["old"] = [i, j];
+        } else {
+          animeKingPosition["old"] = [i, j];
+        }
       }
     });
   });
@@ -1551,14 +1563,76 @@ function positionEvaluation(oldFormat, newFormate) {
       } else if (column["team"] != "none") {
         newValue -= Values[column["type"]];
       }
+
+      if (column["type"] == "king") {
+        if (column["team"] == bootTeam) {
+          bootKingPosition["new"] = [i, j];
+        } else {
+          animeKingPosition["new"] = [i, j];
+        }
+      }
     });
   });
+
+  // king came closer to the edg //
+  // boot king //
+  // vertical //
+  if (
+    bootKingPosition["old"][0] < 4 &&
+    bootKingPosition["new"][0] < bootKingPosition["old"][0]
+  ) {
+    newValue--;
+  } else if (
+    bootKingPosition["old"][0] >= 4 &&
+    bootKingPosition["new"][0] > bootKingPosition["old"][0]
+  ) {
+    newValue--;
+  }
+  // horizontal //
+  if (
+    bootKingPosition["old"][1] < 4 &&
+    bootKingPosition["new"][1] < bootKingPosition["old"][1]
+  ) {
+    newValue--;
+  } else if (
+    bootKingPosition["old"][1] >= 4 &&
+    bootKingPosition["new"][1] > bootKingPosition["old"][1]
+  ) {
+    newValue--;
+  }
+
+  // anime king //
+  // vertical //
+  if (
+    animeKingPosition["old"][0] < 4 &&
+    animeKingPosition["new"][0] < animeKingPosition["old"][0]
+  ) {
+    newValue++;
+  } else if (
+    animeKingPosition["old"][0] >= 4 &&
+    animeKingPosition["new"][0] > animeKingPosition["old"][0]
+  ) {
+    newValue++;
+  }
+  // horizontal //
+  if (
+    animeKingPosition["old"][1] < 4 &&
+    animeKingPosition["new"][1] < animeKingPosition["old"][1]
+  ) {
+    newValue++;
+  } else if (
+    animeKingPosition["old"][1] >= 4 &&
+    animeKingPosition["new"][1] > animeKingPosition["old"][1]
+  ) {
+    newValue++;
+  }
+  //  //
 
   return newValue - oldValue;
 }
 
 function bootTesting(info, team, alpha, beta, depth) {
-  // compar++;
+  compar++;
 
   //  //
   if (depth == 0) {
@@ -1579,7 +1653,7 @@ function bootTesting(info, team, alpha, beta, depth) {
     animeTeam = "white";
   }
 
-  let bestMove;
+  let bestMoves = [];
   info.forEach((row, i) => {
     row.forEach((column, j) => {
       if (column["team"] == team) {
@@ -1612,24 +1686,6 @@ function bootTesting(info, team, alpha, beta, depth) {
 
         // test all moves //
         moves.forEach((move) => {
-          // the king edg bonus //
-          let kingEdg = 0;
-          if (column["type"] == "king") {
-            if (
-              (i + 1 <= 4 && move["move"][0] < i) ||
-              (i + 1 >= 5 && move["move"][0] > i)
-            ) {
-              kingEdg += -1;
-            }
-            if (
-              (j + 1 <= 4 && move["move"][1] < j) ||
-              (j + 1 >= 5 && move["move"][1] > j)
-            ) {
-              kingEdg += -1;
-            }
-          }
-          //  //
-
           let target = {
             team: info[move["move"][0] - 1][move["move"][1] - 1]["team"],
             type: info[move["move"][0] - 1][move["move"][1] - 1]["type"],
@@ -1645,39 +1701,69 @@ function bootTesting(info, team, alpha, beta, depth) {
           //  //
 
           // get the evaluation //
-          let nextLevel =
-            bootTesting(info, animeTeam, alpha, beta, depth - 1) + kingEdg;
+          let nextLevel = bootTesting(info, animeTeam, alpha, beta, depth - 1);
+          //  //
 
           // unmake the move //
           column["team"] =
             info[move["move"][0] - 1][move["move"][1] - 1]["team"];
           column["type"] =
             info[move["move"][0] - 1][move["move"][1] - 1]["type"];
-
           info[move["move"][0] - 1][move["move"][1] - 1]["team"] =
             target["team"];
           info[move["move"][0] - 1][move["move"][1] - 1]["type"] =
             target["type"];
           //  //
 
-          //  //
-          if (team == bootTeam && nextLevel > alpha) {
-            alpha = nextLevel;
-            bestMove = {
+          // test the evaluation //
+          // add the move to te best moves //
+          if (
+            depth == bootDepth &&
+            ((team == bootTeam && nextLevel == alpha) ||
+              (team != bootTeam && nextLevel == beta))
+          ) {
+            bestMoves.push({
               from: [i + 1, j + 1],
               to: [move["move"][0], move["move"][1]],
               targetType: target["type"],
               upgrade: "none",
-            };
+            });
+          }
+          //  //
+
+          if (team == bootTeam && nextLevel > alpha) {
+            // get the best evaluation //
+            alpha = nextLevel;
+            //  //
+
+            // reset the moves //
+            if (depth == bootDepth) {
+              bestMove = [
+                {
+                  from: [i + 1, j + 1],
+                  to: [move["move"][0], move["move"][1]],
+                  targetType: target["type"],
+                  upgrade: "none",
+                },
+              ];
+            }
           }
           if (team != bootTeam && nextLevel < beta) {
+            // get the best evaluation //
             beta = nextLevel;
-            bestMove = {
-              from: [i + 1, j + 1],
-              to: [move["move"][0], move["move"][1]],
-              targetType: target["type"],
-              upgrade: "none",
-            };
+            //  //
+
+            // reset the moves //
+            if (depth == bootDepth) {
+              bestMove = [
+                {
+                  from: [i + 1, j + 1],
+                  to: [move["move"][0], move["move"][1]],
+                  targetType: target["type"],
+                  upgrade: "none",
+                },
+              ];
+            }
           }
 
           if (alpha >= beta) {
@@ -1685,14 +1771,13 @@ function bootTesting(info, team, alpha, beta, depth) {
           }
           //  //
         });
-
-        //  //
       }
     });
   });
 
+  //  //
   if (depth == bootDepth) {
-    return bestMove;
+    return bestMoves[parseInt(Math.random() * (bestMoves.length - 1))];
   } else {
     if (team == bootTeam) {
       return alpha;
@@ -1713,13 +1798,13 @@ function bootTurn() {
   });
   //  //
 
-  // console.log("boot playing");
-  // compar = 0;
+  console.log("boot playing");
+  compar = 0;
 
   let bootMove = bootTesting(copyInfo, bootTeam, -100000, 100000, bootDepth);
 
-  // console.log("num of testes: " + compar);
-  // console.log("");
+  console.log("num of testes: " + compar);
+  console.log("");
 
   let bootBias;
   biases.forEach((bias) => {
@@ -1790,3 +1875,6 @@ difficultButtons.forEach((button, index) => {
 //  //
 
 //
+
+/*
+ */
