@@ -398,8 +398,8 @@ function resetBiases(positionsCode) {
   //  //
 }
 //  //
-resetBiases(defaultPositions);
-// resetBiases("bc15/bc25/bk35/wk75");
+// resetBiases(defaultPositions);
+resetBiases("bc15/bc25/bk35/wk75");
 
 // hide scoop on click area //
 areas.forEach((obj) => {
@@ -1139,41 +1139,30 @@ function numberOfMoves(team, info) {
   return number;
 }
 function noMoves(team, info) {
-  // get the team biases //
-  let myBiases = [];
+  let test = true;
+
   info.forEach((row, i) => {
     row.forEach((column, j) => {
       if (column["team"] == team) {
-        myBiases.push({ type: column["type"], position: [i, j] });
+        let moves = findMovesAvailable(
+          i + 1,
+          j + 1,
+          team,
+          column["type"],
+          info
+        );
+        moves = findKingSafety(i + 1, j + 1, team, moves, info);
+
+        if (moves.length > 0) {
+          test = false;
+          return;
+        }
       }
     });
-  });
-  //
-
-  let test = true;
-  for (let biasIndex = 0; biasIndex < myBiases.length; biasIndex++) {
-    // get the legal moves //
-    let moves = findMovesAvailable(
-      myBiases[biasIndex]["position"][0] + 1,
-      myBiases[biasIndex]["position"][1] + 1,
-      team,
-      myBiases[biasIndex]["type"],
-      info
-    );
-    moves = findKingSafety(
-      myBiases[biasIndex]["position"][0] + 1,
-      myBiases[biasIndex]["position"][1] + 1,
-      team,
-      moves,
-      info
-    );
-    //  //
-
-    if (moves.length > 0) {
-      test = false;
-      break;
+    if (test == false) {
+      return;
     }
-  }
+  });
 
   return test;
 }
@@ -1654,15 +1643,7 @@ function bootTesting(info, team, alpha, beta, depth) {
 
   //  //
   if (depth == 0) {
-    if (noMoves(team, info) == true) {
-      if (team == bootTeam) {
-        return -10000;
-      } else {
-        return 10000;
-      }
-    } else {
-      return positionEvaluation(boardInfo, info);
-    }
+    return positionEvaluation(boardInfo, info);
   } else if (noMoves(team, info) == true) {
     if (team == bootTeam) {
       return -10000;
@@ -1679,161 +1660,141 @@ function bootTesting(info, team, alpha, beta, depth) {
     animeTeam = "white";
   }
 
-  // get the team biases //
-  let myBiases = [];
-  info.forEach((row, i) => {
-    row.forEach((column, j) => {
-      if (column["team"] == team) {
-        myBiases.push({ type: column["type"], position: [i, j] });
-      }
-    });
-  });
-
   //
 
   let bestMoves = [];
-  for (let biasIndex = 0; biasIndex < myBiases.length; biasIndex++) {
-    let biasI = myBiases[biasIndex]["position"][0];
-    let biasJ = myBiases[biasIndex]["position"][1];
+  info.forEach((row, i) => {
+    row.forEach((column, j) => {
+      if (column["team"] == team) {
+        // get legal moves //
+        let moves = findMovesAvailable(
+          i + 1,
+          j + 1,
+          column["team"],
+          column["type"],
+          info
+        );
+        moves = findKingSafety(i + 1, j + 1, column["team"], moves, info);
+        //  //
 
-    // get legal moves //
-    let moves = findMovesAvailable(
-      myBiases[biasIndex]["position"][0] + 1,
-      myBiases[biasIndex]["position"][1] + 1,
-      team,
-      myBiases[biasIndex]["type"],
-      info
-    );
-    moves = findKingSafety(
-      myBiases[biasIndex]["position"][0] + 1,
-      myBiases[biasIndex]["position"][1] + 1,
-      team,
-      moves,
-      info
-    );
-    //  //
+        // sorting the moves //
 
-    // sorting the moves //
-    for (let x = 0; x < moves.length - 1; x++) {
-      let bestIndex = x;
-      for (let y = x + 1; y < moves.length; y++) {
-        if (Values[moves[y]["target"]] > Values[moves[bestIndex]["target"]]) {
-          bestIndex = y;
+        for (let x = 0; x < moves.length - 1; x++) {
+          let bestIndex = x;
+          for (let y = x + 1; y < moves.length; y++) {
+            if (
+              Values[moves[y]["target"]] > Values[moves[bestIndex]["target"]]
+            ) {
+              bestIndex = y;
+            }
+          }
+          let move = moves[x];
+          moves[x] = moves[bestIndex];
+          moves[bestIndex] = move;
         }
-      }
-      let move = moves[x];
-      moves[x] = moves[bestIndex];
-      moves[bestIndex] = move;
-    }
-    //  //
 
-    // test all moves //
-    for (let moveIndex = 0; moveIndex < moves.length; moveIndex++) {
-      let targetI = moves[moveIndex]["move"][0];
-      let targetJ = moves[moveIndex]["move"][1];
+        //  //
 
-      let target = {
-        team: info[targetI - 1][targetJ - 1]["team"],
-        type: info[targetI - 1][targetJ - 1]["type"],
-      };
+        // test all moves //
+        moves.forEach((move) => {
+          let target = {
+            team: info[move["move"][0] - 1][move["move"][1] - 1]["team"],
+            type: info[move["move"][0] - 1][move["move"][1] - 1]["type"],
+          };
 
-      // make the move //
-      info[targetI - 1][targetJ - 1]["team"] = team;
-      info[targetI - 1][targetJ - 1]["type"] = myBiases[biasIndex]["type"];
-      info[biasI][biasJ]["team"] = "none";
-      info[biasI][biasJ]["type"] = "none";
-      //  //
+          // make the move //
+          info[move["move"][0] - 1][move["move"][1] - 1]["team"] =
+            column["team"];
+          info[move["move"][0] - 1][move["move"][1] - 1]["type"] =
+            column["type"];
+          column["team"] = "none";
+          column["type"] = "none";
+          //  //
 
-      // get the evaluation //
-      let nextLevel = bootTesting(info, animeTeam, alpha, beta, depth - 1);
+          // get the evaluation //
+          let nextLevel = bootTesting(info, animeTeam, alpha, beta, depth - 1);
+          //  //
 
-      // check bonus //
-      /*
-      if (checkTest(team, info, "test") == true) {
-        if (team == bootTeam) {
-          nextLevel += 2;
-        } else {
-          nextLevel -= 2;
-        }
-      }
-      */
-      //  //
+          /*
+          if (checkTest(team, info, "test") == true) {
+            if (team == bootTeam) {
+              nextLevel += 2;
+            } else {
+              nextLevel -= 2;
+            }
+          }
+          */
 
-      // unmake the move //
-      info[biasI][biasJ]["team"] = info[targetI - 1][targetJ - 1]["team"];
-      info[biasI][biasJ]["type"] = info[targetI - 1][targetJ - 1]["type"];
-      info[targetI - 1][targetJ - 1]["team"] = target["team"];
-      info[targetI - 1][targetJ - 1]["type"] = target["type"];
-      //  //
+          // unmake the move //
+          column["team"] =
+            info[move["move"][0] - 1][move["move"][1] - 1]["team"];
+          column["type"] =
+            info[move["move"][0] - 1][move["move"][1] - 1]["type"];
+          info[move["move"][0] - 1][move["move"][1] - 1]["team"] =
+            target["team"];
+          info[move["move"][0] - 1][move["move"][1] - 1]["type"] =
+            target["type"];
+          //  //
 
-      // add the move to te best moves //
-      if (
-        depth == bootDepth &&
-        ((team == bootTeam && nextLevel == alpha) ||
-          (team != bootTeam && nextLevel == beta))
-      ) {
-        bestMoves.push({
-          from: [
-            myBiases[biasIndex]["position"][0] + 1,
-            myBiases[biasIndex]["position"][1] + 1,
-          ],
-          to: [moves[moveIndex]["move"][0], moves[moveIndex]["move"][1]],
-          targetType: target["type"],
-          upgrade: "none",
+          // test the evaluation //
+          // add the move to te best moves //
+          if (
+            depth == bootDepth &&
+            ((team == bootTeam && nextLevel == alpha) ||
+              (team != bootTeam && nextLevel == beta))
+          ) {
+            bestMoves.push({
+              from: [i + 1, j + 1],
+              to: [move["move"][0], move["move"][1]],
+              targetType: target["type"],
+              upgrade: "none",
+            });
+          }
+          //  //
+
+          if (team == bootTeam && nextLevel > alpha) {
+            // get the best evaluation //
+            alpha = nextLevel;
+            //  //
+
+            // reset the moves //
+            if (depth == bootDepth) {
+              bestMoves = [
+                {
+                  from: [i + 1, j + 1],
+                  to: [move["move"][0], move["move"][1]],
+                  targetType: target["type"],
+                  upgrade: "none",
+                },
+              ];
+            }
+          }
+          if (team != bootTeam && nextLevel < beta) {
+            // get the worst evaluation //
+            beta = nextLevel;
+            //  //
+
+            // reset the moves //
+            if (depth == bootDepth) {
+              bestMoves = [
+                {
+                  from: [i + 1, j + 1],
+                  to: [move["move"][0], move["move"][1]],
+                  targetType: target["type"],
+                  upgrade: "none",
+                },
+              ];
+            }
+          }
+
+          if (alpha >= beta) {
+            return;
+          }
+          //  //
         });
       }
-      //  //
-
-      // test the evaluation //
-      if (team == bootTeam && nextLevel > alpha) {
-        // get the best evaluation //
-        alpha = nextLevel;
-        //  //
-
-        // reset the moves //
-        if (depth == bootDepth) {
-          bestMoves = [
-            {
-              from: [
-                myBiases[biasIndex]["position"][0] + 1,
-                myBiases[biasIndex]["position"][1] + 1,
-              ],
-              to: [moves[moveIndex]["move"][0], moves[moveIndex]["move"][1]],
-              targetType: target["type"],
-              upgrade: "none",
-            },
-          ];
-        }
-      }
-      if (team != bootTeam && nextLevel < beta) {
-        // get the worst evaluation //
-        beta = nextLevel;
-        //  //
-
-        // reset the moves //
-        if (depth == bootDepth) {
-          bestMoves = [
-            {
-              from: [
-                myBiases[biasIndex]["position"][0] + 1,
-                myBiases[biasIndex]["position"][1] + 1,
-              ],
-              to: [moves[moveIndex]["move"][0], moves[moveIndex]["move"][1]],
-              targetType: target["type"],
-              upgrade: "none",
-            },
-          ];
-        }
-      }
-
-      if (alpha >= beta) {
-        break;
-      }
-    }
-    if (alpha >= beta) {
-      break;
-    }
-  }
+    });
+  });
 
   //  //
   if (depth == bootDepth) {
@@ -1860,7 +1821,6 @@ function bootTurn() {
 
   console.log("boot playing");
   compar = 0;
-  alphaCounter = 0;
 
   let bootMove = bootTesting(copyInfo, bootTeam, -100000, 100000, bootDepth);
 
