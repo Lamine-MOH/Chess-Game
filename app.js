@@ -1160,6 +1160,7 @@ function noMoves(team, info) {
       myBiases[biasIndex]["type"],
       info
     );
+
     moves = findKingSafety(
       myBiases[biasIndex]["position"][0] + 1,
       myBiases[biasIndex]["position"][1] + 1,
@@ -1548,6 +1549,11 @@ let bootDepth = 1;
 let compar;
 //  //
 
+//
+bootDepth = 1;
+// resetBiases(" ");
+//
+
 function positionEvaluation(oldFormat, newFormate) {
   let oldValue = 0;
   let newValue = 0;
@@ -1650,24 +1656,12 @@ function positionEvaluation(oldFormat, newFormate) {
 }
 
 function bootTesting(info, team, alpha, beta, depth) {
-  compar++;
-
   //  //
   if (depth == 0) {
-    if (noMoves(team, info) == true) {
-      if (team == bootTeam) {
-        return -10000;
-      } else {
-        return 10000;
-      }
-    } else {
-      return positionEvaluation(boardInfo, info);
-    }
-  } else if (noMoves(team, info) == true) {
     if (team == bootTeam) {
-      return -10000;
+      return positionEvaluation(boardInfo, info);
     } else {
-      return 10000;
+      return -positionEvaluation(boardInfo, info);
     }
   }
   //  //
@@ -1688,10 +1682,10 @@ function bootTesting(info, team, alpha, beta, depth) {
       }
     });
   });
-
   //
 
   let bestMoves = [];
+  let bestValue = -10000;
   for (let biasIndex = 0; biasIndex < myBiases.length; biasIndex++) {
     let biasI = myBiases[biasIndex]["position"][0];
     let biasJ = myBiases[biasIndex]["position"][1];
@@ -1731,7 +1725,6 @@ function bootTesting(info, team, alpha, beta, depth) {
     for (let moveIndex = 0; moveIndex < moves.length; moveIndex++) {
       let targetI = moves[moveIndex]["move"][0];
       let targetJ = moves[moveIndex]["move"][1];
-
       let target = {
         team: info[targetI - 1][targetJ - 1]["team"],
         type: info[targetI - 1][targetJ - 1]["type"],
@@ -1745,19 +1738,7 @@ function bootTesting(info, team, alpha, beta, depth) {
       //  //
 
       // get the evaluation //
-      let nextLevel = bootTesting(info, animeTeam, alpha, beta, depth - 1);
-
-      // check bonus //
-      /*
-      if (checkTest(team, info, "test") == true) {
-        if (team == bootTeam) {
-          nextLevel += 2;
-        } else {
-          nextLevel -= 2;
-        }
-      }
-      */
-      //  //
+      let nextValue = -bootTesting(info, animeTeam, -beta, -alpha, depth - 1);
 
       // unmake the move //
       info[biasI][biasJ]["team"] = info[targetI - 1][targetJ - 1]["team"];
@@ -1766,12 +1747,19 @@ function bootTesting(info, team, alpha, beta, depth) {
       info[targetI - 1][targetJ - 1]["type"] = target["type"];
       //  //
 
+      if (depth == bootDepth) {
+        console.log();
+      }
+      // set the best value
+      if (nextValue > bestValue) {
+        bestValue = nextValue;
+
+        bestMoves = [];
+      }
+      //  //
+
       // add the move to te best moves //
-      if (
-        depth == bootDepth &&
-        ((team == bootTeam && nextLevel == alpha) ||
-          (team != bootTeam && nextLevel == beta))
-      ) {
+      if (depth == bootDepth && nextValue == bestValue) {
         bestMoves.push({
           from: [
             myBiases[biasIndex]["position"][0] + 1,
@@ -1784,66 +1772,24 @@ function bootTesting(info, team, alpha, beta, depth) {
       }
       //  //
 
-      // test the evaluation //
-      if (team == bootTeam && nextLevel > alpha) {
-        // get the best evaluation //
-        alpha = nextLevel;
-        //  //
-
-        // reset the moves //
-        if (depth == bootDepth) {
-          bestMoves = [
-            {
-              from: [
-                myBiases[biasIndex]["position"][0] + 1,
-                myBiases[biasIndex]["position"][1] + 1,
-              ],
-              to: [moves[moveIndex]["move"][0], moves[moveIndex]["move"][1]],
-              targetType: target["type"],
-              upgrade: "none",
-            },
-          ];
-        }
+      if (bestValue > alpha) {
+        alpha = bestValue;
       }
-      if (team != bootTeam && nextLevel < beta) {
-        // get the worst evaluation //
-        beta = nextLevel;
-        //  //
-
-        // reset the moves //
-        if (depth == bootDepth) {
-          bestMoves = [
-            {
-              from: [
-                myBiases[biasIndex]["position"][0] + 1,
-                myBiases[biasIndex]["position"][1] + 1,
-              ],
-              to: [moves[moveIndex]["move"][0], moves[moveIndex]["move"][1]],
-              targetType: target["type"],
-              upgrade: "none",
-            },
-          ];
-        }
-      }
-
+      // alpha beta break //
       if (alpha >= beta) {
-        break;
+        return beta;
       }
-    }
-    if (alpha >= beta) {
-      break;
     }
   }
 
   //  //
   if (depth == bootDepth) {
+    console.log(bestValue);
+    console.log(bestMoves);
+
     return bestMoves[parseInt(Math.random() * (bestMoves.length - 1))];
   } else {
-    if (team == bootTeam) {
-      return alpha;
-    } else {
-      return beta;
-    }
+    return bestValue;
   }
 }
 
@@ -1858,14 +1804,9 @@ function bootTurn() {
   });
   //  //
 
-  console.log("boot playing");
-  compar = 0;
-  alphaCounter = 0;
-
+  // run the simulation //
   let bootMove = bootTesting(copyInfo, bootTeam, -100000, 100000, bootDepth);
-
-  console.log("num of testes: " + compar);
-  console.log("");
+  //  //
 
   let bootBias;
   biases.forEach((bias) => {
@@ -1936,6 +1877,3 @@ difficultButtons.forEach((button, index) => {
 //  //
 
 //
-
-/*
- */
