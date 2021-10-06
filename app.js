@@ -1747,19 +1747,21 @@ function bootTesting(info, team, alpha, beta, depth) {
       info[targetI - 1][targetJ - 1]["type"] = target["type"];
       //  //
 
-      if (depth == bootDepth) {
-        console.log();
+      // alpha beta break //
+      if (nextValue >= beta) {
+        return beta;
       }
+      //  //
+
       // set the best value
-      if (nextValue > bestValue) {
-        bestValue = nextValue;
+      if (nextValue > alpha) {
+        alpha = nextValue;
 
         bestMoves = [];
       }
       //  //
-
       // add the move to te best moves //
-      if (depth == bootDepth && nextValue == bestValue) {
+      if (depth == bootDepth && nextValue == alpha) {
         bestMoves.push({
           from: [
             myBiases[biasIndex]["position"][0] + 1,
@@ -1771,25 +1773,14 @@ function bootTesting(info, team, alpha, beta, depth) {
         });
       }
       //  //
-
-      if (bestValue > alpha) {
-        alpha = bestValue;
-      }
-      // alpha beta break //
-      if (alpha >= beta) {
-        return beta;
-      }
     }
   }
 
   //  //
   if (depth == bootDepth) {
-    console.log(bestValue);
-    console.log(bestMoves);
-
     return bestMoves[parseInt(Math.random() * (bestMoves.length - 1))];
   } else {
-    return bestValue;
+    return alpha;
   }
 }
 
