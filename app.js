@@ -1,4 +1,4 @@
-console.log("new version");
+console.log("new version alpha beta");
 
 //  //
 function isBelong(ele, list) {
@@ -1546,35 +1546,18 @@ let Values = {
 };
 let bootDepth = 1;
 
-let compar;
 //  //
-
-//
-bootDepth = 1;
-// resetBiases(" ");
-//
 
 function positionEvaluation(oldFormat, newFormate) {
   let oldValue = 0;
   let newValue = 0;
 
-  let bootKingPosition = { old: [0, 0], new: [0, 0] };
-  let animeKingPosition = { old: [0, 0], new: [0, 0] };
-
   oldFormat.forEach((row, i) => {
     row.forEach((column, j) => {
       if (column["team"] == bootTeam) {
         oldValue += Values[column["type"]];
-
-        if (column["type"] == "king") {
-          bootKingPosition["old"] = [i, j];
-        }
       } else if (column["team"] != "none") {
         oldValue -= Values[column["type"]];
-
-        if (column["type"] == "king") {
-          animeKingPosition["old"] = [i, j];
-        }
       }
     });
   });
@@ -1583,80 +1566,36 @@ function positionEvaluation(oldFormat, newFormate) {
     row.forEach((column, j) => {
       if (column["team"] == bootTeam) {
         newValue += Values[column["type"]];
-
-        if (column["type"] == "king") {
-          bootKingPosition["new"] = [i, j];
-        }
       } else if (column["team"] != "none") {
         newValue -= Values[column["type"]];
-
-        if (column["type"] == "king") {
-          animeKingPosition["new"] = [i, j];
-        }
       }
     });
   });
 
-  // king came closer to the edg //
-  // boot king //
-  // vertical //
-  if (
-    bootKingPosition["old"][0] < 4 &&
-    bootKingPosition["new"][0] < bootKingPosition["old"][0]
-  ) {
-    newValue--;
-  } else if (
-    bootKingPosition["old"][0] >= 4 &&
-    bootKingPosition["new"][0] > bootKingPosition["old"][0]
-  ) {
-    newValue--;
-  }
-  // horizontal //
-  if (
-    bootKingPosition["old"][1] < 4 &&
-    bootKingPosition["new"][1] < bootKingPosition["old"][1]
-  ) {
-    newValue--;
-  } else if (
-    bootKingPosition["old"][1] >= 4 &&
-    bootKingPosition["new"][1] > bootKingPosition["old"][1]
-  ) {
-    newValue--;
-  }
-
-  // anime king //
-  // vertical //
-  if (
-    animeKingPosition["old"][0] < 4 &&
-    animeKingPosition["new"][0] < animeKingPosition["old"][0]
-  ) {
-    newValue++;
-  } else if (
-    animeKingPosition["old"][0] >= 4 &&
-    animeKingPosition["new"][0] > animeKingPosition["old"][0]
-  ) {
-    newValue++;
-  }
-  // horizontal //
-  if (
-    animeKingPosition["old"][1] < 4 &&
-    animeKingPosition["new"][1] < animeKingPosition["old"][1]
-  ) {
-    newValue++;
-  } else if (
-    animeKingPosition["old"][1] >= 4 &&
-    animeKingPosition["new"][1] > animeKingPosition["old"][1]
-  ) {
-    newValue++;
-  }
-
-  //  //
-
   return newValue - oldValue;
 }
 
+function getBonus(bonusType, move) {
+  let value = 0;
+
+  if (bonusType == "king to edg") {
+    if (move["from"][0] <= 4 && move["to"][0] < move["from"][0]) {
+      value -= 1;
+    } else if (move["from"][0] >= 5 && move["to"][0] > move["from"][0]) {
+      value -= 1;
+    }
+    if (move["from"][1] <= 4 && move["to"][1] < move["from"][1]) {
+      value -= 1;
+    } else if (move["from"][1] >= 5 && move["to"][1] > move["from"][1]) {
+      value -= 1;
+    }
+  }
+
+  return value;
+}
+
 function bootTesting(info, team, alpha, beta, depth) {
-  //  //
+  // the break stage //
   if (depth == 0) {
     if (team == bootTeam) {
       return positionEvaluation(boardInfo, info);
@@ -1685,7 +1624,6 @@ function bootTesting(info, team, alpha, beta, depth) {
   //
 
   let bestMoves = [];
-  let bestValue = -10000;
   for (let biasIndex = 0; biasIndex < myBiases.length; biasIndex++) {
     let biasI = myBiases[biasIndex]["position"][0];
     let biasJ = myBiases[biasIndex]["position"][1];
@@ -1730,6 +1668,18 @@ function bootTesting(info, team, alpha, beta, depth) {
         type: info[targetI - 1][targetJ - 1]["type"],
       };
 
+      // get the bonuses //
+      let bonuses = 0;
+
+      // king edg bonus //
+      if (myBiases[biasIndex]["type"] == "king") {
+        bonuses += getBonus("king to edg", {
+          from: [biasI + 1, biasJ + 1],
+          to: [targetI, targetJ],
+        });
+      }
+      //
+
       // make the move //
       info[targetI - 1][targetJ - 1]["team"] = team;
       info[targetI - 1][targetJ - 1]["type"] = myBiases[biasIndex]["type"];
@@ -1738,7 +1688,9 @@ function bootTesting(info, team, alpha, beta, depth) {
       //  //
 
       // get the evaluation //
-      let nextValue = -bootTesting(info, animeTeam, -beta, -alpha, depth - 1);
+      let nextValue =
+        -bootTesting(info, animeTeam, -beta, -alpha, depth - 1) + bonuses;
+      //
 
       // unmake the move //
       info[biasI][biasJ]["team"] = info[targetI - 1][targetJ - 1]["team"];
@@ -1749,6 +1701,15 @@ function bootTesting(info, team, alpha, beta, depth) {
 
       // alpha beta break //
       if (nextValue >= beta) {
+        if (depth == bootDepth) {
+          return {
+            from: [biasI + 1, biasJ + 1],
+            to: [targetI, targetJ],
+            targetType: target["type"],
+            upgrade: "none",
+          };
+        }
+
         return beta;
       }
       //  //
@@ -1763,11 +1724,8 @@ function bootTesting(info, team, alpha, beta, depth) {
       // add the move to te best moves //
       if (depth == bootDepth && nextValue == alpha) {
         bestMoves.push({
-          from: [
-            myBiases[biasIndex]["position"][0] + 1,
-            myBiases[biasIndex]["position"][1] + 1,
-          ],
-          to: [moves[moveIndex]["move"][0], moves[moveIndex]["move"][1]],
+          from: [biasI + 1, biasJ + 1],
+          to: [targetI, targetJ],
           targetType: target["type"],
           upgrade: "none",
         });
@@ -1779,6 +1737,7 @@ function bootTesting(info, team, alpha, beta, depth) {
   //  //
   if (depth == bootDepth) {
     return bestMoves[parseInt(Math.random() * (bestMoves.length - 1))];
+    // return bestMoves[0];
   } else {
     return alpha;
   }
@@ -1794,11 +1753,11 @@ function bootTurn() {
     });
   });
   //  //
-
   // run the simulation //
   let bootMove = bootTesting(copyInfo, bootTeam, -100000, 100000, bootDepth);
   //  //
 
+  // get the boot bias //
   let bootBias;
   biases.forEach((bias) => {
     const biasI = parseInt(bias.style.gridArea[1]);
@@ -1813,16 +1772,18 @@ function bootTurn() {
       return;
     }
   });
+  //  //
 
+  // make the move //
   // kill the anime bias //
   if (bootMove["targetType"] != "none" && bootMove["targetType"] != "died") {
     biasDied(bootMove["to"][0], bootMove["to"][1]);
   }
-  //  //
   // move the boot bias //
   biasMove(bootBias, bootMove["to"][0], bootMove["to"][1]);
   //  //
-  // upgrade the soldier //
+
+  // upgrade the soldier if available //
   if (bootMove["upgrade"] != "none") {
     setTimeout(() => {
       boardInfo[bootMove["to"][0] - 1][bootMove["to"][1] - 1]["type"] =
@@ -1837,7 +1798,7 @@ function bootTurn() {
   }
   //  //
 
-  // next turn //
+  // set the next turn //
   if (bootTeam == "white") {
     situation = "black turn";
   } else if (bootTeam == "black") {
@@ -1846,11 +1807,11 @@ function bootTurn() {
   //  //
 }
 //  //
+
 // set the difficult level //
 const difficultButtons = document.querySelectorAll(
   ".chess .setting.boot .bootActive .hard-level .b"
 );
-
 difficultButtons.forEach((button, index) => {
   button.addEventListener("click", (e) => {
     // light the button //
@@ -1866,5 +1827,3 @@ difficultButtons.forEach((button, index) => {
   });
 });
 //  //
-
-//
